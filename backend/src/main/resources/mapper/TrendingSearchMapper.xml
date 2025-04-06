@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.historyhot.backend.mapper.TrendingSearchMapper">
+    
+    <resultMap id="trendingSearchMap" type="com.historyhot.backend.model.TrendingSearch">
+        <id property="id" column="id"/>
+        <result property="title" column="title"/>
+        <result property="url" column="url"/>
+        <result property="rank" column="rank"/>
+        <result property="hotValue" column="hot_value"/>
+        <result property="description" column="description"/>
+        <result property="fetchTime" column="fetch_time"/>
+        <result property="fetchDate" column="fetch_date"/>
+        <association property="platform" javaType="com.historyhot.backend.model.Platform">
+            <id property="id" column="platform_id"/>
+            <result property="name" column="platform_name"/>
+            <result property="displayName" column="platform_display_name"/>
+            <result property="description" column="platform_description"/>
+            <result property="apiUrl" column="platform_api_url"/>
+            <result property="active" column="platform_active"/>
+        </association>
+    </resultMap>
+    
+    <select id="findAll" resultMap="trendingSearchMap">
+        SELECT 
+            ts.*,
+            p.name as platform_name,
+            p.display_name as platform_display_name,
+            p.description as platform_description,
+            p.api_url as platform_api_url,
+            p.active as platform_active
+        FROM trending_searches ts
+        JOIN platforms p ON ts.platform_id = p.id
+    </select>
+    
+    <select id="findLatestTrendingSearches" resultMap="trendingSearchMap">
+        SELECT 
+            ts.*,
+            p.name as platform_name,
+            p.display_name as platform_display_name,
+            p.description as platform_description,
+            p.api_url as platform_api_url,
+            p.active as platform_active
+        FROM trending_searches ts
+        JOIN platforms p ON ts.platform_id = p.id
+        WHERE ts.fetch_time = (
+            SELECT MAX(fetch_time) 
+            FROM trending_searches 
+            WHERE platform_id = ts.platform_id
+        )
+        ORDER BY p.name ASC, ts.rank ASC
+    </select>
+    
+    <select id="findByPlatformOrderByRankAsc" resultMap="trendingSearchMap">
+        SELECT 
+            ts.*,
+            p.name as platform_name,
+            p.display_name as platform_display_name,
+            p.description as platform_description,
+            p.api_url as platform_api_url,
+            p.active as platform_active
+        FROM trending_searches ts
+        JOIN platforms p ON ts.platform_id = p.id
+        WHERE ts.platform_id = #{platformId}
+        ORDER BY ts.rank ASC
+    </select>
+    
+    <select id="findByPlatformAndFetchDateOrderByRankAsc" resultMap="trendingSearchMap">
+        SELECT 
+            ts.*,
+            p.name as platform_name,
+            p.display_name as platform_display_name,
+            p.description as platform_description,
+            p.api_url as platform_api_url,
+            p.active as platform_active
+        FROM trending_searches ts
+        JOIN platforms p ON ts.platform_id = p.id
+        WHERE ts.platform_id = #{platformId}
+        AND ts.fetch_date = #{fetchDate}
+        ORDER BY ts.rank ASC
+    </select>
+    
+    <select id="findDistinctFetchDates" resultType="string">
+        SELECT DISTINCT fetch_date 
+        FROM trending_searches 
+        ORDER BY fetch_date DESC
+    </select>
+    
+    <select id="findByFetchDateOrderByPlatformNameAscRankAsc" resultMap="trendingSearchMap">
+        SELECT 
+            ts.*,
+            p.name as platform_name,
+            p.display_name as platform_display_name,
+            p.description as platform_description,
+            p.api_url as platform_api_url,
+            p.active as platform_active
+        FROM trending_searches ts
+        JOIN platforms p ON ts.platform_id = p.id
+        WHERE ts.fetch_date = #{fetchDate}
+        ORDER BY p.name ASC, ts.rank ASC
+    </select>
+    
+    <select id="findById" resultMap="trendingSearchMap">
+        SELECT 
+            ts.*,
+            p.name as platform_name,
+            p.display_name as platform_display_name,
+            p.description as platform_description,
+            p.api_url as platform_api_url,
+            p.active as platform_active
+        FROM trending_searches ts
+        JOIN platforms p ON ts.platform_id = p.id
+        WHERE ts.id = #{id}
+    </select>
+    
+    <insert id="save" parameterType="com.historyhot.backend.model.TrendingSearch" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO trending_searches (
+            platform_id, title, url, rank, hot_value, 
+            description, fetch_time, fetch_date
+        ) VALUES (
+            #{platform.id}, #{title}, #{url}, #{rank}, #{hotValue},
+            #{description}, #{fetchTime}, #{fetchDate}
+        )
+    </insert>
+    
+    <insert id="saveAll" parameterType="java.util.List">
+        INSERT INTO trending_searches (
+            platform_id, title, url, rank, hot_value, 
+            description, fetch_time, fetch_date
+        ) VALUES 
+        <foreach collection="list" item="item" separator=",">
+            (
+                #{item.platform.id}, #{item.title}, #{item.url}, #{item.rank}, #{item.hotValue},
+                #{item.description}, #{item.fetchTime}, #{item.fetchDate}
+            )
+        </foreach>
+    </insert>
+    
+    <delete id="deleteById">
+        DELETE FROM trending_searches WHERE id = #{id}
+    </delete>
+    
+    <select id="findByFetchTimeBetweenOrderByFetchTimeDesc" resultMap="trendingSearchMap">
+        SELECT 
+            ts.*,
+            p.name as platform_name,
+            p.display_name as platform_display_name,
+            p.description as platform_description,
+            p.api_url as platform_api_url,
+            p.active as platform_active
+        FROM trending_searches ts
+        JOIN platforms p ON ts.platform_id = p.id
+        WHERE ts.fetch_time BETWEEN #{start} AND #{end}
+        ORDER BY ts.fetch_time DESC
+    </select>
+    
+    <select id="findByPlatformAndFetchDateAndTitle" resultMap="trendingSearchMap">
+        SELECT 
+            ts.*,
+            p.name as platform_name,
+            p.display_name as platform_display_name,
+            p.description as platform_description,
+            p.api_url as platform_api_url,
+            p.active as platform_active
+        FROM trending_searches ts
+        JOIN platforms p ON ts.platform_id = p.id
+        WHERE ts.platform_id = #{platformId}
+        AND ts.fetch_date = #{fetchDate}
+        AND ts.title = #{title}
+    </select>
+    
+    <delete id="deleteByPlatformAndFetchDateAndTitle">
+        DELETE FROM trending_searches 
+        WHERE platform_id = #{platformId}
+        AND fetch_date = #{fetchDate}
+        AND title = #{title}
+    </delete>
+</mapper> 

@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.historyhot.backend.mapper.HotSummaryMapper">
+    
+    <resultMap id="hotSummaryMap" type="com.historyhot.backend.model.HotSummary">
+        <id property="id" column="id"/>
+        <result property="content" column="content"/>
+        <result property="fetchDate" column="fetch_date"/>
+        <result property="generatedTime" column="generated_time"/>
+        <association property="platform" javaType="com.historyhot.backend.model.Platform">
+            <id property="id" column="platform_id"/>
+            <result property="name" column="platform_name"/>
+            <result property="displayName" column="platform_display_name"/>
+            <result property="description" column="platform_description"/>
+            <result property="apiUrl" column="platform_api_url"/>
+            <result property="active" column="platform_active"/>
+        </association>
+    </resultMap>
+    
+    <select id="findAll" resultMap="hotSummaryMap">
+        SELECT 
+            hs.*,
+            p.name as platform_name,
+            p.display_name as platform_display_name,
+            p.description as platform_description,
+            p.api_url as platform_api_url,
+            p.active as platform_active
+        FROM hot_summaries hs
+        JOIN platforms p ON hs.platform_id = p.id
+        ORDER BY hs.generated_time DESC
+    </select>
+    
+    <select id="findById" resultMap="hotSummaryMap">
+        SELECT 
+            hs.*,
+            p.name as platform_name,
+            p.display_name as platform_display_name,
+            p.description as platform_description,
+            p.api_url as platform_api_url,
+            p.active as platform_active
+        FROM hot_summaries hs
+        JOIN platforms p ON hs.platform_id = p.id
+        WHERE hs.id = #{id}
+    </select>
+    
+    <select id="findByPlatformAndFetchDate" resultMap="hotSummaryMap">
+        SELECT 
+            hs.*,
+            p.name as platform_name,
+            p.display_name as platform_display_name,
+            p.description as platform_description,
+            p.api_url as platform_api_url,
+            p.active as platform_active
+        FROM hot_summaries hs
+        JOIN platforms p ON hs.platform_id = p.id
+        WHERE hs.platform_id = #{platformId}
+        AND hs.fetch_date = #{fetchDate}
+    </select>
+    
+    <select id="findByFetchDate" resultMap="hotSummaryMap">
+        SELECT 
+            hs.*,
+            p.name as platform_name,
+            p.display_name as platform_display_name,
+            p.description as platform_description,
+            p.api_url as platform_api_url,
+            p.active as platform_active
+        FROM hot_summaries hs
+        JOIN platforms p ON hs.platform_id = p.id
+        WHERE hs.fetch_date = #{fetchDate}
+        ORDER BY p.name ASC
+    </select>
+    
+    <select id="existsByPlatformAndFetchDate" resultType="boolean">
+        SELECT EXISTS (
+            SELECT 1 FROM hot_summaries
+            WHERE platform_id = #{platformId}
+            AND fetch_date = #{fetchDate}
+        )
+    </select>
+    
+    <insert id="save" parameterType="com.historyhot.backend.model.HotSummary" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO hot_summaries (
+            platform_id, content, fetch_date, generated_time
+        ) VALUES (
+            #{platform.id}, #{content}, #{fetchDate}, #{generatedTime}
+        )
+    </insert>
+    
+    <delete id="deleteById">
+        DELETE FROM hot_summaries WHERE id = #{id}
+    </delete>
+</mapper> 
